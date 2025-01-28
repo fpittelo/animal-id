@@ -1,5 +1,5 @@
 **Animal-ID**
-*Animal Image Identifier*
+*The Animal Image Identifier*
 
 **About**
 ---------------------
