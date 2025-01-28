@@ -1,0 +1,46 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - dev
+      - qa
+      - main
+
+permissions:
+  id-token: write  # Required for OIDC authentication
+  contents: read  # Default permission for accessing the repo
+
+jobs:
+  deploy-backend:
+    name: Deploy Backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - id: 'auth'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          workload_identity_provider: 'projects/470383196451/locations/global/workloadIdentityPools/github-id-pool-dev/providers/github-actions-dev'
+          service_account: 'github-sa-dev@animid-449013.iam.gserviceaccount.com'
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Check if GCS bucket exists
+        id: check-bucket
+        run: |
+          if gsutil ls -b gs://animid-449013-terraform; then
+            echo "Bucket already exists."
+            echo "bucket_exists=true" >> $GITHUB_ENV
+          else
+            echo "Bucket does not exist."
+            echo "bucket_exists=false" >> $GITHUB_ENV
+          fi
+
+      - name: Create GCS bucket
+        if: env.bucket_exists == 'false'
+        run: |
+          gsutil mb -l europe-west6 gs://animid-449013-terraform
