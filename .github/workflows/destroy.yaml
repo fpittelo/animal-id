@@ -44,7 +44,7 @@ jobs:
       - name: Check if GCS bucket exists
         id: check-bucket
         run: |
-          if gsutil ls -b gs://gothic-province-448810-q2-terraform; then
+          if gsutil ls -b gs://animid-449013-terraform; then
             echo "Bucket exists."
             echo "bucket_exists=true" >> $GITHUB_ENV
           else
@@ -55,7 +55,7 @@ jobs:
       - name: Delete GCS bucket
         if: env.bucket_exists == 'true'
         run: |
-          gsutil rm -r gs://gothic-province-448810-q2-terraform
+          gsutil rm -r gs://animid-449013-terraform
 
 env:
   ZONE: europe-west6-b
