@@ -1,0 +1,61 @@
+name: Destroy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write  # Required for OIDC authentication
+  contents: read   # Default permission for accessing the repo
+
+jobs:
+  terraform-destroy:
+    name: Terraform Destroy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - id: 'auth'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          workload_identity_provider: 'projects/470383196451/locations/global/workloadIdentityPools/github-id-pool-dev/providers/github-actions-dev'
+          service_account: 'github-sa-dev@animid-449013.iam.gserviceaccount.com'
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
+  destroy-backend:
+    name: Destroy Backend
+    runs-on: ubuntu-latest
+    needs: terraform-destroy
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - id: 'auth'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          workload_identity_provider: 'projects/601556865371/locations/global/workloadIdentityPools/github-id-pool/providers/github-actions'
+          service_account: 'github-sa@gothic-province-448810-q2.iam.gserviceaccount.com'
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Check if GCS bucket exists
+        id: check-bucket
+        run: |
+          if gsutil ls -b gs://gothic-province-448810-q2-terraform; then
+            echo "Bucket exists."
+            echo "bucket_exists=true" >> $GITHUB_ENV
+          else
+            echo "Bucket does not exist."
+            echo "bucket_exists=false" >> $GITHUB_ENV
+          fi
+
+      - name: Delete GCS bucket
+        if: env.bucket_exists == 'true'
+        run: |
+          gsutil rm -r gs://gothic-province-448810-q2-terraform
+
+env:
+  ZONE: europe-west6-b
